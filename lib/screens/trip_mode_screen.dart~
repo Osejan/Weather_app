@@ -1,0 +1,241 @@
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:intl/intl.dart';
+
+import '../services/api_keys.dart';
+import '../services/ai_service.dart'; // Custom AI API wrapper
+import '../services/location_service.dart'; // For current location
+
+class TourScreen extends StatefulWidget {
+  const TourScreen({Key? key}) : super(key: key);
+
+  @override
+  State<TourScreen> createState() => _TourScreenState();
+}
+
+class _TourScreenState extends State<TourScreen> {
+  final TextEditingController _originController = TextEditingController();
+  final TextEditingController _destController = TextEditingController();
+  DateTime? _tripDate;
+
+  LatLng? _originCoords;
+  LatLng? _destCoords;
+  bool _loading = false;
+  String? _aiAdvice;
+  List<LatLng> _routePoints = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initOrigin();
+  }
+
+  Future<void> _initOrigin() async {
+    try {
+      final pos = await LocationService.getCurrentLocation();
+      setState(() {
+        _originCoords = LatLng(pos.latitude, pos.longitude);
+        _originController.text = "My Location";
+      });
+    } catch (_) {
+      _originController.text = "Unknown";
+    }
+  }
+
+  Future<void> _planTrip() async {
+    if (_originController.text.isEmpty || _destController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Enter both origin and destination")));
+      return;
+    }
+    if (_tripDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pick a date for the trip")));
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _aiAdvice = null;
+    });
+
+    try {
+      // ⚡ Here you’d call a geocoding service to get lat/lng for destination
+      // Example: Hardcoded destination for demo
+      _destCoords = LatLng(9.9312, 76.2673); // Kochi, Kerala
+
+      // Simulate route (straight line for now)
+      _routePoints = [
+        _originCoords ?? LatLng(10.8505, 76.2711),
+        _destCoords!,
+      ];
+
+      // Ask AI for advice
+      final advice = await AIService.getTripAdvice(
+        origin: _originController.text,
+        destination: _destController.text,
+        date: DateFormat('yyyy-MM-dd').format(_tripDate!),
+      );
+
+      setState(() {
+        _aiAdvice = advice;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 10)), // Only 10 days forecast
+      initialDate: now,
+    );
+    if (picked != null) {
+      setState(() => _tripDate = picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blueGrey.shade900,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 🔹 Input Form
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                  _buildInput("Origin", _originController),
+                  const SizedBox(height: 8),
+                  _buildInput("Destination", _destController),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _pickDate,
+                          icon: const Icon(Icons.calendar_today),
+                          label: Text(_tripDate == null
+                              ? "Pick Date"
+                              : DateFormat('EEE, MMM d')
+                                  .format(_tripDate!)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: _planTrip,
+                        icon: const Icon(Icons.directions),
+                        label: const Text("Plan Trip"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // 🔹 Map
+            Expanded(
+              child: FlutterMap(
+                options: MapOptions(
+                  center: _originCoords ?? LatLng(10.8505, 76.2711),
+                  zoom: 7.5,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    userAgentPackageName: 'com.example.app',
+                  ),
+                  if (_routePoints.isNotEmpty)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: _routePoints,
+                          color: Colors.orange,
+                          strokeWidth: 4,
+                        ),
+                      ],
+                    ),
+                  if (_originCoords != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _originCoords!,
+                          builder: (_) => const Icon(Icons.location_on,
+                              color: Colors.green, size: 36),
+                        ),
+                      ],
+                    ),
+                  if (_destCoords != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _destCoords!,
+                          builder: (_) => const Icon(Icons.flag,
+                              color: Colors.red, size: 36),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+
+            // 🔹 AI Advice Box
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            else if (_aiAdvice != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _aiAdvice!,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInput(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        filled: true,
+        fillColor: Colors.white12,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+}
+

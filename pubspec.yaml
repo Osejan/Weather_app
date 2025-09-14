@@ -1,0 +1,45 @@
+name: weather_trip_app
+description: A Flutter app with weather and trip mode using AI + OpenStreetMap
+publish_to: 'none' # remove this line if you plan to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Networking
+  http: ^1.2.0
+
+  # Location & Geocoding
+  geolocator: ^12.0.0
+  geocoding: ^3.0.0  
+
+  # Persistent storage
+  shared_preferences: ^2.2.2
+
+  # Date/Time formatting
+  intl: ^0.18.1
+
+  # Environment variable / API keys
+  flutter_dotenv: ^5.1.0
+
+  # Maps
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.0
+  flutter_markdown: ^0.7.2
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
