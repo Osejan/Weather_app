@@ -106,25 +106,6 @@ lib/
 
 ---
 
-## 🚀 Future Enhancements  
-
-- 🛰️ Live traffic integration.  
-- 📊 Predictive weather + climate trends for trips.  
-- 💬 Multi-language AI suggestions.  
-- 📌 Offline map caching for low-network areas.  
-
----
-
-## 🤝 Contributing  
-
-Contributions are welcome!  
-
-1. Fork this repo.  
-2. Create a feature branch.  
-3. Commit and push your changes.  
-4. Open a PR 🚀  
-
----
 
 ## 📜 License  
 
