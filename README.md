@@ -101,7 +101,8 @@ lib/
 - 🧠 **AI suggestions styled like blogs** (headings + emojis).  
 - 🌍 **Weather-aware routes** with dynamic color cues.  
 - 📍 **Intermediate city markers** to make long trips more insightful.  
-- 🔒 **Secret protection** with `.gitignore` to keep API keys safe.  
+- 🔒 **Secret protection** with `.gitignore` to keep API keys safe.
+- Emergency Contact Included.
 
 ---
 
